@@ -36,6 +36,14 @@ const appPool = mysql.createPool({
   queueLimit: 0,
 });
 
+for (const p of [hrdPool, appPool]) {
+  if (p.pool) {
+    p.pool.on('connection', (conn) => {
+      conn.query('SET NAMES utf8mb4');
+    });
+  }
+}
+
 function md5(text) {
   return crypto.createHash('md5').update(String(text || ''), 'utf8').digest('hex');
 }
@@ -95,12 +103,14 @@ async function initDatabase() {
     charset: 'utf8mb4',
   });
   try {
+    await bootstrap.query('SET NAMES utf8mb4');
     await bootstrap.query(
       `CREATE DATABASE IF NOT EXISTS \`${APP_DB}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
     );
   } finally {
     await bootstrap.end();
   }
+  await appPool.query('SET NAMES utf8mb4');
 
   await appPool.query(`
     CREATE TABLE IF NOT EXISTS shift_types (
@@ -230,6 +240,11 @@ async function initDatabase() {
       INDEX idx_audit_created (created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  // Repair any legacy tis620-encoded seeded rows before seeding clean UTF-8 defaults
+  await appPool.query("DELETE FROM shift_types WHERE label LIKE '%เธ%' OR label LIKE '%เน%'");
+  await appPool.query("DELETE FROM compensation_rates WHERE group_name LIKE '%เธ%' OR group_name LIKE '%เน%'");
+  await appPool.query("DELETE FROM public_holidays WHERE title LIKE '%เธ%' OR title LIKE '%เน%'");
 
   for (const row of DEFAULT_SHIFT_TYPES) {
     await appPool.query(

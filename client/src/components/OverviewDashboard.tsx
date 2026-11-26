@@ -143,13 +143,14 @@ export const OverviewDashboard: React.FC<Props> = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      gap: 8,
                     }}
                   >
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: s.color }}>{s.code} • {s.label.split(' ')[0]}</div>
                       <div style={{ fontSize: 11, color: '#475569' }}>{s.time_range}</div>
                     </div>
-                    <div className="num" style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{fmtMoney(count)}</div>
+                    <div className="num" style={{ fontSize: 18, fontWeight: 700, color: s.color, flexShrink: 0 }}>{fmtMoney(count)}</div>
                   </div>
                 );
               })}
